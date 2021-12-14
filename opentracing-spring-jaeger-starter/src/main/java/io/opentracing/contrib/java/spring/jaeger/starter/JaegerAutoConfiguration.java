@@ -19,6 +19,7 @@ import io.jaegertracing.internal.metrics.NoopMetricsFactory;
 import io.jaegertracing.internal.reporters.CompositeReporter;
 import io.jaegertracing.internal.reporters.LoggingReporter;
 import io.jaegertracing.internal.samplers.ConstSampler;
+import io.jaegertracing.internal.samplers.AstraeaSampler;
 import io.jaegertracing.internal.samplers.HttpSamplingManager;
 import io.jaegertracing.internal.samplers.ProbabilisticSampler;
 import io.jaegertracing.internal.samplers.RateLimitingSampler;
@@ -101,7 +102,7 @@ public class JaegerAutoConfiguration {
     if (reporterAppender != null) {
       reporterAppender.append(reporters);
     }
-
+    System.out.println("!!!!! mertikkk2 burdayim reporter");
     return new CompositeReporter(reporters.toArray(new Reporter[reporters.size()]));
   }
 
@@ -112,7 +113,7 @@ public class JaegerAutoConfiguration {
         new io.jaegertracing.thrift.internal.senders.UdpSender(
             udpSenderProperties.getHost(), udpSenderProperties.getPort(),
             udpSenderProperties.getMaxPacketSize());
-
+    System.out.println("!!!!! mertikkk2 burdayim udp");                                
     return createReporter(metrics, remoteReporter, udpSender);
   }
 
@@ -130,7 +131,7 @@ public class JaegerAutoConfiguration {
     } else if (!StringUtils.isEmpty(httpSenderProperties.getAuthToken())) {
       builder.withAuth(httpSenderProperties.getAuthToken());
     }
-
+    System.out.println("!!!!! mertikkk burdayim http");
     return createReporter(metrics, remoteReporter, builder.build());
   }
 
@@ -170,38 +171,41 @@ public class JaegerAutoConfiguration {
   @ConditionalOnMissingBean
   @Bean
   public Sampler sampler(JaegerConfigurationProperties properties, Metrics metrics) {
-    if (properties.getConstSampler().getDecision() != null) {
-      return new ConstSampler(properties.getConstSampler().getDecision());
-    }
 
-    if (properties.getProbabilisticSampler().getSamplingRate() != null) {
-      return new ProbabilisticSampler(properties.getProbabilisticSampler().getSamplingRate());
-    }
+    System.out.println("!!!!! mertikkk burdayim sampler");
 
-    if (properties.getRateLimitingSampler().getMaxTracesPerSecond() != null) {
-      return new RateLimitingSampler(properties.getRateLimitingSampler().getMaxTracesPerSecond());
-    }
+    // if (properties.getConstSampler().getDecision() != null) {
+    //   return new ConstSampler(properties.getConstSampler().getDecision());
+    // }
 
-    if (!StringUtils.isEmpty(properties.getRemoteControlledSampler().getHostPort())) {
-      JaegerConfigurationProperties.RemoteControlledSampler samplerProperties
-          = properties.getRemoteControlledSampler();
+    // if (properties.getProbabilisticSampler().getSamplingRate() != null) {
+    //   return new ProbabilisticSampler(properties.getProbabilisticSampler().getSamplingRate());
+    // }
 
-      String hostPort = samplerProperties.getHostPort();
+    // if (properties.getRateLimitingSampler().getMaxTracesPerSecond() != null) {
+    //   return new RateLimitingSampler(properties.getRateLimitingSampler().getMaxTracesPerSecond());
+    // }
 
-      if (samplerProperties.getHost() != null && !samplerProperties.getHost().isEmpty()) {
-        hostPort = samplerProperties.getHost() + ":" + samplerProperties.getPort();
-      }
+    // if (!StringUtils.isEmpty(properties.getRemoteControlledSampler().getHostPort())) {
+    //   JaegerConfigurationProperties.RemoteControlledSampler samplerProperties
+    //       = properties.getRemoteControlledSampler();
 
-      return new RemoteControlledSampler.Builder(properties.getServiceName())
-          .withSamplingManager(new HttpSamplingManager(hostPort))
-          .withInitialSampler(
-              new ProbabilisticSampler(samplerProperties.getSamplingRate()))
-          .withMetrics(metrics)
-          .build();
-    }
+    //   String hostPort = samplerProperties.getHostPort();
+
+    //   if (samplerProperties.getHost() != null && !samplerProperties.getHost().isEmpty()) {
+    //     hostPort = samplerProperties.getHost() + ":" + samplerProperties.getPort();
+    //   }
+
+    //   return new RemoteControlledSampler.Builder(properties.getServiceName())
+    //       .withSamplingManager(new HttpSamplingManager(hostPort))
+    //       .withInitialSampler(
+    //           new ProbabilisticSampler(samplerProperties.getSamplingRate()))
+    //       .withMetrics(metrics)
+    //       .build();
+    // }
 
     //fallback to sampling every trace
-    return new ConstSampler(true);
+    return new AstraeaSampler.Builder(properties.getServiceName()).build();
   }
 
   @Configuration
